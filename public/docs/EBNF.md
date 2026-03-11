@@ -39,31 +39,40 @@ Statement ::= TypeDefinition
 ```ebnf
 TypeDefinition ::= "type" TypeAlias ":" TypeBody
 
-TypeBody ::= InlineTypeRef
-           | TypeRef
-           | TypeObject
+TypeBody ::= TypeObject       (* Complex: { field: <type> } *)
+           | InlineTypeRef    (* Inline or Collection: <type, default> *)
 
 TypeObject ::= "{" ( TypeField ( Sep TypeField )* Sep? )? "}"
 
 TypeField ::= Identifier ":" InlineTypeRef
 ```
 
-A `TypeObject` may only contain `TypeField` entries (no nested functions or value expressions).
+A `TypeObject` (Complex Type) may only contain `TypeField` entries (no nested functions or value expressions).
 Nested type objects are allowed: each `InlineTypeRef` may reference another `TypeAlias`.
-Simple type aliasing is also supported via `TypeRef`.
+`InlineTypeRef` is used for both simple type aliasing, collections, and specifying default values.
+
+**Examples:**
+
+```edgerules
+// TypeObject (Complex Type)
+type Point: { x: <number>; y: <number> }
+
+// InlineTypeRef (Inline or Collection Type)
+type Score: <number, 0>
+type ScoreList: <number[]>
+type People: <Customer[]>
+```
 
 ---
 
 ## Type References
 
 ```ebnf
-(* Used inside angle brackets, e.g. <string>, <number, 0>, <Customer[]> *)
-InlineTypeRef ::= "<" TypeRef ">"
-                | "<" TypeRef "," DefaultValue ">"
+(* Base type reference (e.g., number, Customer, string[]) *)
+TypeRef ::= ( PrimitiveType | TypeAlias ) ListSuffix*
 
-(* Used in parameter annotations, type aliases, and casting *)
-TypeRef ::= PrimitiveType ListSuffix*
-          | TypeAlias    ListSuffix*
+(* Inline type placeholder with optional default value (e.g., <string>, <number, 0>) *)
+InlineTypeRef ::= "<" TypeRef ( "," DefaultValue )? ">"
 
 ListSuffix ::= "[]"
 
@@ -75,6 +84,7 @@ TypeAlias ::= [A-Z] [a-zA-Z0-9]*   (* by convention starts with uppercase *)
 ```
 
 **Examples:**
+
 ```edgerules
 <string>           (* inline type reference *)
 <number, 0>        (* with default value *)
@@ -113,6 +123,7 @@ ParameterTypeAnnotation ::= InlineTypeRef
 ```
 
 **Examples:**
+
 ```edgerules
 func add(a, b): { result: a + b }
 func getName(person: Customer): person.name
@@ -175,6 +186,7 @@ ForEachReturn ::= "for" Identifier  "in"  Expression "return" Expression
 > `for/in/return` iterates over a `Collection`, a numeric range (`a..b`), or a variable holding a list.
 
 **Examples:**
+
 ```edgerules
 if age >= 18 then "adult" else "minor"
 for x in [1, 2, 3] return x * 2
@@ -197,9 +209,11 @@ Both bounds must be integer-valued. Ranges are used as the source of a `for/in/r
 CastExpression ::= Expression "as" TypeRef
 ```
 
-Explicitly casts an expression to a specific type. If the expression is an object, fields not present in the target type are removed. Fields present in the target type but missing in the expression are set to a special value.
+Explicitly casts an expression to a specific type. If the expression is an object, fields not present in the target type
+are removed. Fields present in the target type but missing in the expression are set to a special value.
 
 **Examples:**
+
 ```edgerules
 { x: 1, y: 2 } as Point
 input as Customer[]
@@ -283,6 +297,7 @@ ContextVariable ::= "..."   (* anonymous context reference *)
 `...` and `it` refer to the current element being tested inside a filter predicate.
 
 **Examples:**
+
 ```edgerules
 nums[... > 5]
 nums[it > 5]
@@ -301,6 +316,7 @@ Collection ::= "[" ( Expression ( "," Expression )* )? "]"
 > Runtime constraint: all elements must have the same type (homogeneous arrays).
 
 **Examples:**
+
 ```edgerules
 [1, 2, 3]
 ["a", "b", "c"]
@@ -377,6 +393,7 @@ Comment ::= "//" [^\n\r]* Newline?
 Only single-line comments are supported. Block comments are not available.
 
 **Examples:**
+
 ```edgerules
 // This is a full-line comment
 value: 42   // This is an inline comment
@@ -388,12 +405,12 @@ value: 42   // This is an inline comment
 
 The following words are reserved and cannot be used as identifiers:
 
-| Category      | Keywords                                  |
-|---------------|-------------------------------------------|
-| Control flow  | `if`, `then`, `else`, `for`, `in`, `return` |
-| Definitions   | `func`, `type`, `as`                      |
-| Logical       | `not`, `and`, `or`, `xor`                |
-| Boolean       | `true`, `false`                           |
+| Category        | Keywords                                                                        |
+|-----------------|---------------------------------------------------------------------------------|
+| Control flow    | `if`, `then`, `else`, `for`, `in`, `return`                                     |
+| Definitions     | `func`, `type`, `as`                                                            |
+| Logical         | `not`, `and`, `or`, `xor`                                                       |
+| Boolean         | `true`, `false`                                                                 |
 | Primitive types | `number`, `string`, `boolean`, `date`, `time`, `datetime`, `duration`, `period` |
 
 ---
@@ -402,22 +419,22 @@ The following words are reserved and cannot be used as identifiers:
 
 From **lowest** (outermost) to **highest** (innermost):
 
-| Precedence | Operator(s)              | Associativity |
-|------------|--------------------------|---------------|
-| 1 (lowest) | `if/then/else`, `for/in/return` | —         |
-| 2          | `..` (range)             | left          |
-| 3          | `or`                     | left          |
-| 4          | `xor`                    | left          |
-| 5          | `and`                    | left          |
-| 6          | `not`                    | right (unary) |
-| 7          | `=` `<>` `<` `<=` `>` `>=` | left (non-associative) |
-| 8          | `+` `-`                  | left          |
-| 9          | `*` `×` `/` `÷` `%`      | left          |
-| 10         | `^`                      | left          |
-| 11         | unary `-`                | right         |
-| 12         | `as`                     | left          |
-| 13         | `[...]` (filter/index), `.` (selection) | left |
-| 14 (highest) | `()` (function call)   | left          |
+| Precedence   | Operator(s)                             | Associativity          |
+|--------------|-----------------------------------------|------------------------|
+| 1 (lowest)   | `if/then/else`, `for/in/return`         | —                      |
+| 2            | `..` (range)                            | left                   |
+| 3            | `or`                                    | left                   |
+| 4            | `xor`                                   | left                   |
+| 5            | `and`                                   | left                   |
+| 6            | `not`                                   | right (unary)          |
+| 7            | `=` `<>` `<` `<=` `>` `>=`              | left (non-associative) |
+| 8            | `+` `-`                                 | left                   |
+| 9            | `*` `×` `/` `÷` `%`                     | left                   |
+| 10           | `^`                                     | left                   |
+| 11           | unary `-`                               | right                  |
+| 12           | `as`                                    | left                   |
+| 13           | `[...]` (filter/index), `.` (selection) | left                   |
+| 14 (highest) | `()` (function call)                    | left                   |
 
 ---
 
@@ -425,12 +442,12 @@ From **lowest** (outermost) to **highest** (innermost):
 
 Special values are produced by the runtime (not written as literals in source code):
 
-| Value            | Meaning                                          |
-|------------------|--------------------------------------------------|
-| `Missing`        | Expected value was absent or not provided        |
-| `NotApplicable`  | Value is not relevant; treated as neutral (0/1/"") in arithmetic |
-| `Invalid`        | Value failed a type-cast validation              |
-| `NotFound`       | Referenced field or index does not exist (treated as `Missing`) |
+| Value           | Meaning                                                          |
+|-----------------|------------------------------------------------------------------|
+| `Missing`       | Expected value was absent or not provided                        |
+| `NotApplicable` | Value is not relevant; treated as neutral (0/1/"") in arithmetic |
+| `Invalid`       | Value failed a type-cast validation                              |
+| `NotFound`      | Referenced field or index does not exist (treated as `Missing`)  |
 
 Built-in predicates for testing special values: `isMissing(x)`, `isNotApplicable(x)`,
 `isInvalid(x)`, `isSpecialValue(x)`, `isPresent(x)`.
@@ -496,13 +513,13 @@ PeriodLiteral   ::= "period"   "(" StringLiteral ")"
 
 String formats:
 
-| Type       | Format                            | Examples                       |
-|------------|-----------------------------------|--------------------------------|
-| `date`     | `YYYY-MM-DD`                      | `"2024-01-15"`                 |
-| `time`     | `HH:MM:SS`                        | `"14:30:00"`                   |
-| `datetime` | `YYYY-MM-DDTHH:MM:SS[.sss][Z\|±HH:MM]` | `"2024-01-15T14:30:00Z"` |
-| `duration` | `P[nD][T[nH][nM][nS]]`            | `"P4D"`, `"PT90M"`, `"P2DT3H"` |
-| `period`   | `P[nY][nM][nD]`                   | `"P18Y6M"`, `"P1Y"`, `"P10D"` |
+| Type       | Format                                 | Examples                       |
+|------------|----------------------------------------|--------------------------------|
+| `date`     | `YYYY-MM-DD`                           | `"2024-01-15"`                 |
+| `time`     | `HH:MM:SS`                             | `"14:30:00"`                   |
+| `datetime` | `YYYY-MM-DDTHH:MM:SS[.sss][Z\|±HH:MM]` | `"2024-01-15T14:30:00Z"`       |
+| `duration` | `P[nD][T[nH][nM][nS]]`                 | `"P4D"`, `"PT90M"`, `"P2DT3H"` |
+| `period`   | `P[nY][nM][nD]`                        | `"P18Y6M"`, `"P1Y"`, `"P10D"`  |
 
 Component access uses dot notation: `date("2024-01-15").year`, `datetime(...).hour`, `duration(...).totalHours`.
 
@@ -534,9 +551,8 @@ Statement ::= TypeDefinition
 
 TypeDefinition ::= "type" TypeAlias ":" TypeBody
 
-TypeBody ::= InlineTypeRef
-           | TypeRef
-           | TypeObject
+TypeBody ::= TypeObject
+           | InlineTypeRef
 
 TypeObject ::= "{" ( TypeField ( Sep TypeField )* Sep? )? "}"
 
@@ -544,11 +560,9 @@ TypeField ::= Identifier ":" InlineTypeRef
 
 (* --- Type references --- *)
 
-InlineTypeRef ::= "<" TypeRef ">"
-                | "<" TypeRef "," DefaultValue ">"
+TypeRef ::= ( PrimitiveType | TypeAlias ) ListSuffix*
 
-TypeRef ::= PrimitiveType ListSuffix*
-          | TypeAlias    ListSuffix*
+InlineTypeRef ::= "<" TypeRef ( "," DefaultValue )? ">"
 
 ListSuffix ::= "[]"
 
@@ -734,7 +748,9 @@ Identifier ::= [a-zA-Z] ( [a-zA-Z0-9] | (* U+03B1-U+03C9 Greek lowercase *) )*
 
 ## Output EBNF
 
-The following grammar describes the structure of the values produced as the output of an EdgeRules program. It is a strict subset of the full language grammar, excluding all definitions, operators, and control-flow expressions. To avoid ambiguity with the source grammar, these rules use the `Output` prefix.
+The following grammar describes the structure of the values produced as the output of an EdgeRules program. It is a
+strict subset of the full language grammar, excluding all definitions, operators, and control-flow expressions. To avoid
+ambiguity with the source grammar, these rules use the `Output` prefix.
 
 ```ebnf
 Output ::= OutputValue
