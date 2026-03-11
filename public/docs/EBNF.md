@@ -12,10 +12,10 @@ derived from the tokenizer, AST, type system, and test suite.
 ## Program
 
 ```ebnf
-Program ::= Context
+Program ::= Context | Expression
 ```
 
-A program is a single top-level `Context` object.
+A program is either a single top-level `Context` object or a single `Expression`.
 
 ---
 
@@ -40,6 +40,7 @@ Statement ::= TypeDefinition
 TypeDefinition ::= "type" TypeAlias ":" TypeBody
 
 TypeBody ::= InlineTypeRef
+           | TypeRef
            | TypeObject
 
 TypeObject ::= "{" ( TypeField ( Sep TypeField )* Sep? )? "}"
@@ -49,6 +50,7 @@ TypeField ::= Identifier ":" InlineTypeRef
 
 A `TypeObject` may only contain `TypeField` entries (no nested functions or value expressions).
 Nested type objects are allowed: each `InlineTypeRef` may reference another `TypeAlias`.
+Simple type aliasing is also supported via `TypeRef`.
 
 ---
 
@@ -59,7 +61,7 @@ Nested type objects are allowed: each `InlineTypeRef` may reference another `Typ
 InlineTypeRef ::= "<" TypeRef ">"
                 | "<" TypeRef "," DefaultValue ">"
 
-(* Used in parameter annotations *)
+(* Used in parameter annotations, type aliases, and casting *)
 TypeRef ::= PrimitiveType ListSuffix*
           | TypeAlias    ListSuffix*
 
@@ -148,6 +150,7 @@ Expression ::= Literal
              | IfThenElse
              | ForEachReturn
              | RangeExpression
+             | CastExpression
              | UnaryExpression
              | PowerExpression
              | MultiplicativeExpression
@@ -187,6 +190,20 @@ RangeExpression ::= Expression ".." Expression
 
 Both bounds must be integer-valued. Ranges are used as the source of a `for/in/return` loop
 (`for i in 1..10 return i`) or as a filter index (`arr[1..3]`).
+
+### Cast
+
+```ebnf
+CastExpression ::= Expression "as" TypeRef
+```
+
+Explicitly casts an expression to a specific type. If the expression is an object, fields not present in the target type are removed. Fields present in the target type but missing in the expression are set to a special value.
+
+**Examples:**
+```edgerules
+{ x: 1, y: 2 } as Point
+input as Customer[]
+```
 
 ### Unary Operators
 
@@ -374,7 +391,7 @@ The following words are reserved and cannot be used as identifiers:
 | Category      | Keywords                                  |
 |---------------|-------------------------------------------|
 | Control flow  | `if`, `then`, `else`, `for`, `in`, `return` |
-| Definitions   | `func`, `type`                            |
+| Definitions   | `func`, `type`, `as`                      |
 | Logical       | `not`, `and`, `or`, `xor`                |
 | Boolean       | `true`, `false`                           |
 | Primitive types | `number`, `string`, `boolean`, `date`, `time`, `datetime`, `duration`, `period` |
@@ -398,8 +415,9 @@ From **lowest** (outermost) to **highest** (innermost):
 | 9          | `*` `×` `/` `÷` `%`      | left          |
 | 10         | `^`                      | left          |
 | 11         | unary `-`                | right         |
-| 12         | `[...]` (filter/index), `.` (selection) | left |
-| 13 (highest) | `()` (function call)   | left          |
+| 12         | `as`                     | left          |
+| 13         | `[...]` (filter/index), `.` (selection) | left |
+| 14 (highest) | `()` (function call)   | left          |
 
 ---
 
@@ -499,7 +517,7 @@ Component access uses dot notation: `date("2024-01-15").year`, `datetime(...).ho
 
 (* --- Top level --- *)
 
-Program ::= Context
+Program ::= Context | Expression
 
 Context ::= "{" ( Statement ( Sep Statement )* Sep? )? "}"
 
@@ -517,6 +535,7 @@ Statement ::= TypeDefinition
 TypeDefinition ::= "type" TypeAlias ":" TypeBody
 
 TypeBody ::= InlineTypeRef
+           | TypeRef
            | TypeObject
 
 TypeObject ::= "{" ( TypeField ( Sep TypeField )* Sep? )? "}"
@@ -568,6 +587,7 @@ Expression ::= Literal
              | IfThenElse
              | ForEachReturn
              | RangeExpression
+             | CastExpression
              | UnaryExpression
              | PowerExpression
              | MultiplicativeExpression
@@ -588,6 +608,10 @@ ForEachReturn ::= "for" Identifier  "in"  Expression "return" Expression
 (* Range *)
 
 RangeExpression ::= Expression ".." Expression
+
+(* Cast *)
+
+CastExpression ::= Expression "as" TypeRef
 
 (* Unary operators *)
 
@@ -704,4 +728,41 @@ Identifier ::= [a-zA-Z] ( [a-zA-Z0-9] | (* U+03B1-U+03C9 Greek lowercase *) )*
     doubled: for n in sales return n * 2
     best: max(sales)
 }
+```
+
+---
+
+## Output EBNF
+
+The following grammar describes the structure of the values produced as the output of an EdgeRules program. It is a strict subset of the full language grammar, excluding all definitions, operators, and control-flow expressions. To avoid ambiguity with the source grammar, these rules use the `Output` prefix.
+
+```ebnf
+Output ::= OutputValue
+
+OutputValue ::= Literal
+              | OutputCollection
+              | OutputContext
+              | TemporalValue
+              | SpecialValue
+
+OutputCollection ::= "[" ( OutputValue ( "," OutputValue )* )? "]"
+
+OutputContext ::= "{" ( OutputFieldAssignment ( Sep OutputFieldAssignment )* Sep? )? "}"
+
+OutputFieldAssignment ::= Identifier ":" OutputValue
+
+Literal ::= NumberLiteral
+          | StringLiteral
+          | BooleanLiteral
+
+TemporalValue ::= "date"     "(" StringLiteral ")"
+                | "time"     "(" StringLiteral ")"
+                | "datetime" "(" StringLiteral ")"
+                | "duration" "(" StringLiteral ")"
+                | "period"   "(" StringLiteral ")"
+
+SpecialValue ::= "Missing" "(" StringLiteral ")"
+               | "NotApplicable"
+               | "Invalid" "(" StringLiteral ")"
+               | "NotFound"
 ```
