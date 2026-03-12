@@ -161,7 +161,6 @@ Expression ::= Literal
              | IfThenElse
              | ForEachReturn
              | RangeExpression
-             | CastExpression
              | UnaryExpression
              | PowerExpression
              | MultiplicativeExpression
@@ -202,22 +201,6 @@ RangeExpression ::= Expression ".." Expression
 
 Both bounds must be integer-valued. Ranges are used as the source of a `for/in/return` loop
 (`for i in 1..10 return i`) or as a filter index (`arr[1..3]`).
-
-### Cast
-
-```ebnf
-CastExpression ::= Expression "as" TypeRef
-```
-
-Explicitly casts an expression to a specific type. If the expression is an object, fields not present in the target type
-are removed. Fields present in the target type but missing in the expression are set to a special value.
-
-**Examples:**
-
-```edgerules
-{ x: 1, y: 2 } as Point
-input as Customer[]
-```
 
 ### Unary Operators
 
@@ -601,7 +584,6 @@ Expression ::= Literal
              | IfThenElse
              | ForEachReturn
              | RangeExpression
-             | CastExpression
              | UnaryExpression
              | PowerExpression
              | MultiplicativeExpression
@@ -622,10 +604,6 @@ ForEachReturn ::= "for" Identifier  "in"  Expression "return" Expression
 (* Range *)
 
 RangeExpression ::= Expression ".." Expression
-
-(* Cast *)
-
-CastExpression ::= Expression "as" TypeRef
 
 (* Unary operators *)
 
