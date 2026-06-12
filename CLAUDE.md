@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Vite + React (TypeScript) app that renders an interactive reference/playground for the EdgeRules language.
 Content comes from Markdown files in `public/docs/` parsed at runtime. Examples are evaluated in-browser
-via the EdgeRules WebAssembly module. Deployed to GitHub Pages: https://rimvydasb.github.io/edgerules-page/
+via the EdgeRules WebAssembly module. Deployed to GitHub Pages: https://rimvydasb.github.io/edgerules-page-legacy/
 
 ## Commands
 
@@ -17,7 +17,7 @@ via the EdgeRules WebAssembly module. Deployed to GitHub Pages: https://rimvydas
 - Test: `npm test` (Jest, runs files under `tests/**/*.test.ts`)
 - Run a single test file: `npx jest tests/parseBaseExamples.test.ts`
 - Dev server: `npm run dev` — **do not run this yourself**; use `npm run build` to verify code instead.
-  `tests/devServerSmoke.test.ts` expects a dev server already running at `http://localhost:5173/edgerules-page/`
+  `tests/devServerSmoke.test.ts` expects a dev server already running at `http://localhost:5173/edgerules-page-legacy/`
   (override with `EDGE_RULES_BASE_URL`), so it will fail without one.
 
 ## Architecture
@@ -70,7 +70,7 @@ via the EdgeRules WebAssembly module. Deployed to GitHub Pages: https://rimvydas
 ### Deployment
 
 - GitHub Actions (`.github/workflows/`) builds and deploys `main` to GitHub Pages on push.
-- `base` in `vite.config.js` must match the GitHub Pages path (`/edgerules-page/`) — update both if the
+- `base` in `vite.config.js` must match the GitHub Pages path (`/edgerules-page-legacy/`) — update both if the
   repo name or path changes.
 
 ## Code Style

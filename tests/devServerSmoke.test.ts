@@ -1,4 +1,4 @@
-const defaultBase = 'http://localhost:5173/edgerules-page/';
+const defaultBase = 'http://localhost:5173/edgerules-page-legacy/';
 const rawBase = process.env["EDGE_RULES_BASE_URL"] ?? defaultBase;
 const baseUrl = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
 
@@ -26,7 +26,7 @@ describe('EdgeRules dev server smoke test', () => {
             expect(res.ok).toBe(true);
             const html = await res.text();
             expect(html).toContain('<div id="root"></div>');
-            expect(html).toContain('<script type="module" src="/edgerules-page/src/main.tsx"></script>');
+            expect(html).toContain('<script type="module" src="/edgerules-page-legacy/src/main.tsx"></script>');
         },
         requestTimeout,
     );
