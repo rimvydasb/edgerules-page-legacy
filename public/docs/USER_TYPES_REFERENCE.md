@@ -34,7 +34,7 @@ Types can be nested and combined.
     type Person: { 
         name: <string>; age: <number>; tags: <string[]> 
     }
-    type PeopleList: Person[]
+    type PeopleList: <Person[]>
     func getAdults(people: PeopleList): {
         result: people[age >= 18]
     }

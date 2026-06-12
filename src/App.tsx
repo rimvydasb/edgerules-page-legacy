@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react'
-import Editor from 'react-simple-code-editor'
+import ReactSimpleCodeEditor from 'react-simple-code-editor'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-javascript'
 import LZString from 'lz-string'
@@ -10,6 +10,11 @@ import Playground from './components/Playground'
 import type {BaseExample, Example} from './examples/types'
 import {fetchAndParseBaseExamples, fetchMarkdown, formatWasmResult, parseBaseExamplesMarkdown} from './utils/parseBaseExamples'
 import {CONTENT_PAGES} from './content/pages'
+
+// Some bundlers/dep-optimizers double-wrap this package's CJS default export
+// (`{ __esModule: true, default: Component }`); normalize to the component.
+const Editor = (ReactSimpleCodeEditor as unknown as { default?: typeof ReactSimpleCodeEditor }).default
+    ?? ReactSimpleCodeEditor
 
 export default function App() {
     const [lang] = useState<'javascript'>('javascript')
