@@ -24,7 +24,7 @@ export default defineConfig(() => {
 
     return {
         plugins: [react()],
-        base: '/edgerules-page/',
+        base: '/edgerules-page-legacy/',
         define: {
             __ER_WASM_BUST__: JSON.stringify(wasmBust),
             __ER_JS_BUST__: JSON.stringify(jsBust),

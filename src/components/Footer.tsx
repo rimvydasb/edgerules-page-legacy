@@ -4,7 +4,7 @@ import { CONTENT_PAGES } from '../content/pages'
 import { getBaseUrl, isMarkdownContentMenuItem } from '../utils/parseBaseExamples'
 
 export default function Footer() {
-    const baseUrl = "https://github.com/rimvydasb/edgerules-page/blob/main/public/"
+    const baseUrl = "https://github.com/rimvydasb/edgerules-page-legacy/blob/main/public/"
 
     return (
         <footer className="footer">
@@ -26,7 +26,7 @@ export default function Footer() {
                             <li>
                                 <a
                                     className="footer__link"
-                                    href="https://github.com/rimvydasb/edgerules-page"
+                                    href="https://github.com/rimvydasb/edgerules-page-legacy"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
@@ -86,7 +86,7 @@ export default function Footer() {
 
                 <div className="footer__bottom">
                     <div>Interactive examples powered by EdgeRules WASM.</div>
-                    <div className="footer__copyright">© {new Date().getFullYear()} edgerules-page</div>
+                    <div className="footer__copyright">© {new Date().getFullYear()} edgerules-page-legacy</div>
                 </div>
             </div>
         </footer>

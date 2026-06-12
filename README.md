@@ -2,7 +2,7 @@
 
 Interactive reference and playground for the EdgeRules language, built with Vite and React. Deployed to GitHub Pages.
 
-Live site: https://rimvydasb.github.io/edgerules-page/
+Live site: https://rimvydasb.github.io/edgerules-page-legacy/
 
 ## Quick Start
 
